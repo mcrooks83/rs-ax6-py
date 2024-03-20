@@ -1,7 +1,7 @@
 
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from py_lib import libomapi as api
 
 # mimic of record.c example
@@ -65,20 +65,50 @@ def record_setup(device_id, now_time):
 
     return True
 
+# function to set any delays required
+def set_delays(device_id, delays, now_time):
+    start_days_from_now = delays["start_days"]
+    start_hour = delays["start_hour"] # midnight?
+    end_hour = delays["stop_hour"] # midnight?
+    duration_days = delays["duration_days"] # 8 days of logging
+    start_month = now_time.month + start_days_from_now #current month
+    
+    new_year = now_time.year + (start_month // 12)
+    start_month %= 12
+    if start_month == 0:
+        start_month = 12
+
+    start = datetime(
+        year=new_year,
+        month=start_month,
+        day=now_time.day + start_days_from_now,
+        hour=start_hour,
+        minute=0,
+        second=0
+    )
+    
+    stop = datetime(
+        year=new_year,
+        month=start_month,
+        day=now_time.day + start_days_from_now + duration_days,
+        hour=end_hour,
+        minute=0,
+        second=0
+    )
+    start_time = api.get_time(device_id, start )
+    stop_time = api.get_time(device_id, stop)
+    result = api.set_delays(device_id, start_time, stop_time)
+    if(result):
+        print("delays set")
+    return result
+
+
 # configures connected devices
-def configure_devices_to_record():
+def configure_devices_to_record(delays):
 
     min_batt_level = 85 # default min battery level to start a long recording
 
-    now = datetime.now()
-    now_time = datetime(
-            now.year,
-            now.month,
-            now.day,
-            now.hour,
-            now.minute,
-            now.second
-    )
+    now_time = datetime.now()
 
     # 1. set the device callbacks
     log_callback_set = api.set_log_callback(log_callback)
@@ -111,21 +141,17 @@ def configure_devices_to_record():
                 print("battery level at acceptable level")
                 result = record_setup(d_id, now_time)
                 if(result):
-                    pass
-                    # setup was successful
-                    # set delays if any (i.e start recoding 1 day later until 8 days)
                     
-                    # api set_start_recording(start_day, start_hour) returns start_time
-                    # api set_stop_recording(stop_day, stop_hour) return stop_time (stop_day is now to duration)
-                    # api set_delays(device_id, start_time, stop_time)
+                    if(delays):
+                        delays_set = set_delays(d_id, delays, now_time)
 
-                    # commit the settings to the device
-                    # resut  = commit_recording_settings(device_id)
+                    if(delays_set):
+                        # commit the settings to the device
+                        result  = api.commit_recording_settings(d_id)
+                        print("committed recording settings", result)
 
-
-
-        # 5. sleep for 5 seconds
-        time.sleep(5)
+        # 5. sleep for 2 seconds
+        time.sleep(2)
 
 
 # main entry point
@@ -136,9 +162,15 @@ def main(argv=None):
     # pass in config parameters here (user generated)
     # session id (int)
     # range / rate
-    # delay info - start_day (number of days from now) start_hour () duration_days
+    # delay info - start_days_from_now (number of days from now) start_hour () duration_days
 
-    configure_devices_to_record()
+    delays ={
+        "start_days": 0, #days to start from now
+        "duration_days": 8, # duration in days
+        "start_hour": 0, # midnight,
+        "stop_hour": 0 # midnight
+    }
+    configure_devices_to_record(delays)
 
     return 0
 if __name__ == "__main__":

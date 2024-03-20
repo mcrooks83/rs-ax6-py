@@ -22,6 +22,10 @@ LED_GREEN = omlib.OM_LED_GREEN
 OmDeviceCallback = omlib.OmDeviceCallback
 OmLogCallback = omlib.OmLogCallback
 
+# WIP: 
+
+#OM_DATETIME startTime, stopTime;
+
 #should probably create an API class for types as well as functions
 
 def start_up():
@@ -121,6 +125,27 @@ def shut_down():
     print("shutting down api")
     result = omlib.OmShutdown()
     return result
+
+def get_time(device_id, time):
+    set_time = omlib.OM_DATETIME_FROM_YMDHMS(time.year+1900, time.month, time.day, time.hour, time.minute, time.second)
+    print("RECORD #%d: TIME %04d-%02d-%02d %02d:%02d:%02d\n", device_id, time.year + 1900, time.month, time.day, time.hour, time.minute, time.second)
+
+    return set_time
+
+def set_delays(device_id, start_time, stop_time):
+    result = omlib.OmSetDelays(device_id, start_time, stop_time)
+    if (omlib.OM_FAILED(result)):
+        print("ERROR: OmSetDelays()", omlib.OmErrorString(result))
+        return 0
+    return True
+
+def commit_recording_settings(device_id):
+    result = omlib.OmEraseDataAndCommit(device_id, omlib.OM_ERASE_WIPE)
+    if (omlib.OM_FAILED(result)):
+        print("ERROR: OmEraseDataAndCommit()", omlib.OmErrorString(result))
+        return 0
+    return result
+
 
 def set_now_time(device_id, now):
     nowTime = omlib.OM_DATETIME_FROM_YMDHMS(now.year, now.month, now.day, now.hour, now.minute, now.second)
