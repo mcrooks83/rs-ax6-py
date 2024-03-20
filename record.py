@@ -2,7 +2,7 @@
 import sys
 import time
 from datetime import datetime
-from lib import libomapi as api
+from py_lib import libomapi as api
 
 # mimic of record.c example
 # goal is to be able to provide configuration settings and setup the device to record
@@ -83,7 +83,7 @@ def configure_devices_to_record():
     # 1. set the device callbacks
     log_callback_set = api.set_log_callback(log_callback)
     print("log callback set", log_callback_set)
-    
+
     is_callback_set = api.set_device_callback(device_callback)
     print("is callback set:", is_callback_set)
 

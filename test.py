@@ -1,6 +1,6 @@
 import sys
 
-from lib import libomapi as api
+from py_lib import libomapi as api
 import time
 
 
