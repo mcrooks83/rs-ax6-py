@@ -1,6 +1,7 @@
 import sys
 from py_lib import libomapi as api
 import time
+from datetime import datetime
 
 # Device callback
 @api.OmDeviceCallback
@@ -15,32 +16,7 @@ def device_callback(ref, deviceId, status):
 def log_callback(ref, message):
     print("OMLOG: " + message)
 
-# test a connected device
-def test_device(device_id):
-    print(f"testing device {device_id}")
-
-    result = api.set_led(device_id, api.LED_BLUE)
-    if(result == 0):
-        print(f"Led set to blue for {device_id}")
-        print(f"Sleeping for 2 seconds")
-        time.sleep(2)
-        result = api.set_led(device_id, api.LED_WHITE)
-        print(f"reset led to white for {device_id}")
-	
-    # get battery health
-    batt_level = api.get_battery_level(device_id)
-    print(f"battery level for device {device_id} {batt_level}")
-
-    # accelerometer 
-    accelerometer = api.get_accelermoter(device_id)
-    print(f"accel data",accelerometer)
-
-    #memory health
-    result = api.get_memory_health(device_id)
-    print(f"memory health", result)
-
-# set up for testing
-def test():
+def clear_devices():
 
     log_callback_set = api.set_log_callback(log_callback)
     print("log callback set", log_callback_set)
@@ -63,19 +39,47 @@ def test():
 
         #/* For each device currently connected... */
         for idx, id in enumerate(device_ids):
-            print(f"testing device {idx} {id}")
-            test_device(id)
+            print(f"clearing device {idx} {id}")
+
+            # set led to red
+            result = api.set_led(id, api.LED_RED)
+
+            #set session id to zero
+            result = api.set_session_id(id, 0)
+
+            # clear meta data
+            result = api.clear_meta_data(id)
+
+            # disable logging
+            result = api.clear_logging(id)
+
+            # reset accel to defaults
+            result = api.reset_accel_to_default(id)
+
+            # set time to now
+            now_time = datetime.now()
+            result = api.set_now_time(id, now_time)
+
+            # clear and commit
+            result = api.clear_device(id)
+            
+            if(result):
+                print("device clearerd", result)
+                result = api.set_led(id, api.LED_BLUE)
+                time.sleep(2)
+                api.set_led(id, api.LED_WHITE)
+
+            
 
     #shut down
     result = api.shut_down()
     print(result)
 
-
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    test()
+    clear_devices()
 
     return 0
 

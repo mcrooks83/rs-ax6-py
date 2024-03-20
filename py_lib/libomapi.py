@@ -18,15 +18,36 @@ LED_BLUE = omlib.OM_LED_BLUE
 LED_WHITE = omlib.OM_LED_WHITE
 LED_RED = omlib.OM_LED_RED
 LED_GREEN = omlib.OM_LED_GREEN
+LED_MAGENTA = omlib.OM_LED_MAGENTA
+LED_CYAN = omlib.OM_LED_CYAN
 
 OmDeviceCallback = omlib.OmDeviceCallback
 OmLogCallback = omlib.OmLogCallback
 
-# WIP: 
 
-#OM_DATETIME startTime, stopTime;
+# clear device
 
+def clear_device(device_id):
+    print("CLEARING #%d: Clear data and commit...\n", device_id)
+    result = omlib.OmEraseDataAndCommit(device_id, omlib.OM_ERASE_QUICKFORMAT)
+    if(omlib.OM_FAILED(result)):
+        print("WARNING: OmEraseDataAndCommit()", omlib.OmErrorString(result))
+    return True
+
+def clear_logging(device_id):
+    print("clearing delays = <never-log>...", device_id)
+    result = omlib.OmSetDelays(device_id, omlib.OM_DATETIME_INFINITE, omlib.OM_DATETIME_INFINITE)
+    if (omlib.OM_FAILED(result)):
+        print("WARNING: OmSetDelays()", omlib.OmErrorString(result))
+    return result
+
+def reset_accel_to_default(device_id):
+    result = omlib.OmSetAccelConfig(device_id, omlib.OM_ACCEL_DEFAULT_RATE, omlib.OM_ACCEL_DEFAULT_RANGE)
+    if (omlib.OM_FAILED(result)):
+        print("WARNING: OmSetAccelConfig() ", omlib.OmErrorString(result))
+    return result
 #should probably create an API class for types as well as functions
+
 
 def start_up():
     # Start the API

@@ -1,7 +1,7 @@
 
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from py_lib import libomapi as api
 
 # mimic of record.c example
