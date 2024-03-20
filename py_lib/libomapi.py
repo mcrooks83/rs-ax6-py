@@ -14,6 +14,14 @@ from datetime import datetime
 
 OM_DEVICE_CONNECTED = omlib.OM_DEVICE_CONNECTED
 OM_DEVICE_DISONNECTED = 0
+DEVICE_REMOVED = omlib.OM_DEVICE_REMOVED
+DEVICE_STATUS = omlib.OM_DEVICE_STATUS
+DOWNLOAD_PROGRESS = omlib.OM_DOWNLOAD_PROGRESS
+DOWNLOAD_COMPLETE = omlib.OM_DOWNLOAD_COMPLETE
+DOWNLOAD_CANCELLED = omlib.OM_DOWNLOAD_CANCELLED
+DOWNLOAD_ERROR = omlib.OM_DOWNLOAD_ERROR
+
+
 LED_BLUE = omlib.OM_LED_BLUE
 LED_WHITE = omlib.OM_LED_WHITE
 LED_RED = omlib.OM_LED_RED
@@ -23,9 +31,44 @@ LED_CYAN = omlib.OM_LED_CYAN
 
 OmDeviceCallback = omlib.OmDeviceCallback
 OmLogCallback = omlib.OmLogCallback
+OmDownloadCallback = omlib.OmDownloadCallback
 
+def get_data_range(device_id):
+    data_block_size = omlib.c_int(0)
+    data_offset_blocks = omlib.c_int(0)
+    data_num_blocks = omlib.c_int(0)
+    start_time = omlib.OM_DATETIME(0)
+    end_time  = omlib.OM_DATETIME(0)
+    result = omlib.OmGetDataRange(device_id, 
+                                ctypes.byref(data_block_size), 
+                                ctypes.byref(data_offset_blocks), 
+                                ctypes.byref(data_num_blocks),
+                                ctypes.byref(start_time),
+                                ctypes.byref(end_time))
+    if (omlib.OM_FAILED(result)):
+        print("ERROR: OmGetDataRange() %s\n", omlib.OmErrorString(result)) 
+        return None
+        
+    return data_block_size.value, data_offset_blocks.value, data_num_blocks.value, start_time.value, end_time.value
 
-# clear device
+def get_start_stop_string(start_time, end_time):
+    char_array_type = ctypes.c_char * omlib.OM_DATETIME_BUFFER_SIZE
+    start_string  = char_array_type()
+    end_string = char_array_type()
+    omlib.OmDateTimeToString(start_time, start_string)
+    omlib.OmDateTimeToString(end_time, end_string)
+    return start_string.value.decode('utf-8'), end_string.value.decode('utf-8')
+
+def get_session_id(device_id):
+    session_id = ctypes.c_uint(0)
+    result = omlib.OmGetSessionId(device_id, ctypes.byref(session_id))
+    if (omlib.OM_FAILED(result)):
+        print("ERROR: OmGetSessionId()", omlib.OmErrorString(result))
+        return None
+    return session_id.value
+
+def set_log_stream():
+    omlib.OmSetLogStream(-1)
 
 def clear_device(device_id):
     print("CLEARING #%d: Clear data and commit...\n", device_id)
@@ -46,8 +89,6 @@ def reset_accel_to_default(device_id):
     if (omlib.OM_FAILED(result)):
         print("WARNING: OmSetAccelConfig() ", omlib.OmErrorString(result))
     return result
-#should probably create an API class for types as well as functions
-
 
 def start_up():
     # Start the API
@@ -55,6 +96,14 @@ def start_up():
     if omlib.OM_FAILED(omlib.OmStartup(omlib.OM_VERSION)):
         print("ERROR: OmStartup()")
         sys.exit(-1)
+    else:
+        return True
+
+
+def set_download_callback(func):
+    if(omlib.OM_FAILED(omlib.OmSetDownloadCallback(func, None))):
+       print("ERROR: OmSetDownloadCallback")
+       sys.exit(-1)
     else:
         return True
 
@@ -122,7 +171,7 @@ def get_accelermoter(device_id):
                                       ctypes.pointer(accelerometer_list[0]),
                                       ctypes.pointer(accelerometer_list[1]),
                                       ctypes.pointer(accelerometer_list[2]))
-    #if (omlib.OM_FAILED(result)):
+    
     accel = [c_int.value for c_int in accelerometer_list] 
     return accel
 
@@ -137,10 +186,6 @@ def get_memory_health(device_id):
     if omlib.OM_FAILED(result):
         print("WARNING: OmGetMemoryHealth() " + omlib.OmErrorString(result))
     return result
-
-#def free_devices(device_ids):
-#    omlib.free(device_ids)
-#    return f"devices free"
 
 def shut_down():
     print("shutting down api")
@@ -209,8 +254,6 @@ def clear_meta_data(device_id):
     print(f"clearing meta data for {device_id}")
     omlib.OmSetMetadata(device_id, None, 0)
 
-# def set_delays(start_day, start_hour, stop_day, stop_hour)
-
 def set_delays(device_id, start_time, stop_time):
     result = omlib.OmSetDelays(device_id, start_time, stop_time)
     if (omlib.OM_FAILED(result)):
@@ -224,8 +267,6 @@ def commit_recording_settings(device_id):
         print("ERROR OmEraseDataAndCommit", omlib.OmErrorString(result))
         return 0
     return result
-
-
 
 ### status functions
 

@@ -21,21 +21,9 @@ def device_callback(ref, deviceId, status):
 def log_callback(ref, message):
     print("OMLOG: " + message)
 
-
-# configuration times -> python dict?
-#int startDays = 1, startHour = 0;
-#int durationDays = 8, endHour = 0;
-#int minBatt = 85;
-#int debugMode = 0;
-            
-#The pairing of session identifiers and their assigned device identifiers is written to an output file (if specified).
-# outfile ->  not sure what this is?
-
-# pass more properties in here like start_day etc
 def record_setup(device_id, now_time):
 
     session_id = 1
-   
     range = 8 # default range of acclerometer OM_ACCEL_DEFAULT_RANGE
     rate = 100 # default sampling rate OM_ACCEL_DEFAULT_RATE
     
@@ -153,16 +141,10 @@ def configure_devices_to_record(delays):
         # 5. sleep for 2 seconds
         time.sleep(2)
 
-
 # main entry point
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-
-    # pass in config parameters here (user generated)
-    # session id (int)
-    # range / rate
-    # delay info - start_days_from_now (number of days from now) start_hour () duration_days
 
     delays ={
         "start_days": 0, #days to start from now
