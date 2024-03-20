@@ -1,0 +1,1 @@
+wsl ./_generate.sh
